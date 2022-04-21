@@ -1,0 +1,12 @@
+app/build
+compile_commands.json
+.cache/
+*.swp
+
+*.cmd
+*.symvers
+*.ko
+*.mod.*
+*.mod
+*.o
+*.order
