@@ -157,27 +157,18 @@ static ssize_t my_read(struct file* filp, char __user* buf, size_t count, loff_t
 	int to_cpy = 0;
 
 	/* check if there is something to read */
-
 	if (*f_pos >= buffer_index) {
 		printk("my_driver: trying to read a empty buffer region");
 		goto ReadOut;
 	}
 
-	/* get amount of data to copy */
-	
-	if (count <= buffer_index - *f_pos) {
-		to_cpy = count;
-	}
-	else {
-		to_cpy = buffer_index - *f_pos;
-	}
+	/* get amount of bytes to copy to user */
+	to_cpy = (count <= buffer_index - *f_pos) ? count : buffer_index - *f_pos;
 
 	/* copy data to user */
-	
 	retval = to_cpy - copy_to_user(buf, device_mem + *f_pos, to_cpy);
 
 	/* update the file position */
-	
 	*f_pos += retval;
 
 ReadOut:
@@ -190,27 +181,18 @@ static ssize_t my_write(struct file* filp, const char __user* buf, size_t count,
 	int to_cpy = 0;
 
 	/* check if the buffer is full */
-	
 	if (buffer_index >= BUFFER_LEN) {
 		printk("my_driver: trying to write in a full buffer");
 		goto WriteOut;
 	}
 
 	/* get amount of data to copy */
-	
-	if (count <= BUFFER_LEN - buffer_index) {
-		to_cpy = count;
-	}
-	else {
-		to_cpy = BUFFER_LEN - buffer_index;
-	}
+	to_cpy = (count <= BUFFER_LEN - buffer_index) ? count : BUFFER_LEN - buffer_index;
 
 	/* copy data from user */
-	
 	retval = to_cpy - copy_from_user(device_mem + buffer_index, buf, to_cpy);
 
 	/* update buffer_index position */
-	
 	buffer_index += retval;
 
 WriteOut:
