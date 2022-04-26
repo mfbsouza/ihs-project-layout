@@ -20,7 +20,7 @@ OD     := $(PREFIX)objdump
 # flags
 CFLAGS   := -Wall -I $(INCDIR) -MMD -MP
 CXXFLAGS := -Wall -I $(INCDIR) -MMD -MP
-CXXFLAGS := -f elf
+ASMFLAGS := -f elf
 LDFLAGS  :=
 
 ifeq ($(DEBUG),1)
