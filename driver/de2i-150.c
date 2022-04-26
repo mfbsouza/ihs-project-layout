@@ -20,12 +20,12 @@
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("mfbsouza");
-MODULE_DESCRIPTION("char device driver");
+MODULE_DESCRIPTION("simple pci driver for DE2i-150 dev board");
 
 /* lkm entry and exit points */
 
-static int 	__init my_init (void);
-static void 	__exit my_exit (void);
+static int  __init my_init (void);
+static void __exit my_exit (void);
 
 module_init(my_init);
 module_exit(my_exit);
@@ -80,7 +80,10 @@ static struct cdev my_device;
 /* device data */
 
 static void* display_r = NULL;
+static void* display_l = NULL;
+static void* peripheral = NULL;
 static void* switches = NULL;
+static void* p_buttons = NULL;
 
 /* functions implementation */
 
@@ -160,18 +163,18 @@ static ssize_t my_read(struct file* filp, char __user* buf, size_t count, loff_t
 {
 	ssize_t retval = 0;
 	int to_cpy = 0;
-	unsigned int temp = 0;
+	static unsigned int temp = 0;
+
+	/* check if the peripheral pointer is set */
+	if (peripheral == NULL) {
+		return -ECANCELED;
+	}
 
 	/* read from the device */
-	temp = ioread32(switches);
+	temp = ioread32(peripheral);
 
-	/* get amount of data to copy */
-	if (count <= sizeof(temp)) {
-		to_cpy = count;
-	}
-	else {
-		to_cpy = sizeof(temp);
-	}
+	/* get amount of bytes to copy to user */
+	to_cpy = (count <= sizeof(temp)) ? count : sizeof(temp);
 
 	/* copy data to user */
 	retval = to_cpy - copy_to_user(buf, &temp, to_cpy);
@@ -183,27 +186,42 @@ static ssize_t my_write(struct file* filp, const char __user* buf, size_t count,
 {
 	ssize_t retval = 0;
 	int to_cpy = 0;
-	unsigned int temp = 0;
+	static unsigned char temp[12];
 
-	/* get amount of data to copy */
-	if (count <= sizeof(temp)) {
-		to_cpy = count;
-	}
-	else {
-		to_cpy = sizeof(temp);
-	}
+	/* get amount of bytes to copy from user */
+	to_cpy = (count <= sizeof(temp)) ? count : sizeof(temp);
 
 	/* copy data from user */
 	retval = to_cpy - copy_from_user(&temp, buf, to_cpy);
 
 	/* send to device */
-	iowrite32(temp, display_r);
+	switch(temp[0]) {
+	case 0:
+		iowrite32(*(unsigned int*)(temp+1), display_r);
+		break;
+	case 1:
+		iowrite32(*(unsigned int*)(temp+1), display_l);
+		break;
+	default:
+		printk("my_driver: error, no %x case in switch\n", temp[0]);
+		break;
+	}
 
 	return retval;
 }
 
-static long int my_ioctl(struct file*, unsigned int, unsigned long)
+static long int my_ioctl(struct file*, unsigned int cmd, unsigned long arg)
 {
+	switch(cmd){
+	case 0:
+		peripheral = switches;
+		break;
+	case 1:
+		peripheral = p_buttons;
+		break;
+	default:
+		printk("my_driver: unknown ioctl command: %x\n", cmd);
+	}
 	return 0;
 }
 
@@ -226,14 +244,20 @@ static int my_pci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 	printk("my_driver: PCI device resources start at bar 0: %lx\n", resource);
 	
 	display_r = ioremap(resource + 0xC000, 0x20);
+	display_l = ioremap(resource + 0xC140, 0x20);
 	switches = ioremap(resource + 0xC040, 0x20);
+	p_buttons = ioremap(resource + 0xC080, 0x20);
+	peripheral = switches;
 
 	return 0;
 }
 
 static void my_pci_remove(struct pci_dev *dev)
 {
+	peripheral = NULL;
 	iounmap(display_r);
+	iounmap(display_l);
 	iounmap(switches);
+	iounmap(p_buttons);
 	pci_disable_device(dev);
 }
