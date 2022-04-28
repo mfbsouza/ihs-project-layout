@@ -230,18 +230,22 @@ static long int my_ioctl(struct file*, unsigned int cmd, unsigned long arg)
 	case RD_SWITCHES:
 		read_pointer = switches;
 		read_name_index = 0;
+		printk("my_driver: updated read pointer to %s\n", perf_names[read_name_index]);
 		break;
 	case RD_PBUTTONS:
 		read_pointer = p_buttons;
 		read_name_index = 1;
+		printk("my_driver: updated read pointer to %s\n", perf_names[read_name_index]);
 		break;
 	case WR_L_DISPLAY:
 		write_pointer = display_l;
 		write_name_index = 2 + 0;
+		printk("my_driver: updated write pointer to %s\n", perf_names[write_name_index]);
 		break;
 	case WR_R_DISPLAY:
 		write_pointer = display_r;
 		write_name_index = 2 + 1;
+		printk("my_driver: updated write pointer to %s\n", perf_names[write_name_index]);
 		break;
 	default:
 		printk("my_driver: unknown ioctl command: 0x%X\n", cmd);
