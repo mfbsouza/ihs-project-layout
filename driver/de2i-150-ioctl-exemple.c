@@ -8,6 +8,8 @@
 #include <linux/uaccess.h>	/* copy_*_user functions */
 #include <linux/pci.h>		/* pci funcs and types */
 
+#include "ioctl_cmds.h"
+
 /* driver constants */
 
 #define DRIVER_NAME 	"my_driver"
@@ -81,9 +83,22 @@ static struct cdev my_device;
 
 static void* display_r = NULL;
 static void* display_l = NULL;
-static void* peripheral = NULL;
 static void* switches = NULL;
 static void* p_buttons = NULL;
+
+static void* read_pointer = NULL;
+static void* write_pointer = NULL;
+
+static const char* perf_names[] = {
+	"switches",
+	"p_buttons",
+	"display_l",
+	"display_r",
+	"green_leds",
+	"red_leds"
+};
+static int write_name_index = 2 + 1;
+static int read_name_index = 0;
 
 /* functions implementation */
 
@@ -163,21 +178,23 @@ static ssize_t my_read(struct file* filp, char __user* buf, size_t count, loff_t
 {
 	ssize_t retval = 0;
 	int to_cpy = 0;
-	static unsigned int temp = 0;
+	static unsigned int temp_read = 0;
 
-	/* check if the peripheral pointer is set */
-	if (peripheral == NULL) {
+	/* check if the read_pointer pointer is set */
+	if (read_pointer == NULL) {
+		printk("my_driver: trying to read to a device region not set yet\n");
 		return -ECANCELED;
 	}
 
 	/* read from the device */
-	temp = ioread32(peripheral);
+	temp_read = ioread32(read_pointer);
+	printk("my_driver: red 0x%X from the %s\n", temp_read, perf_names[read_name_index]);
 
 	/* get amount of bytes to copy to user */
-	to_cpy = (count <= sizeof(temp)) ? count : sizeof(temp);
+	to_cpy = (count <= sizeof(temp_read)) ? count : sizeof(temp_read);
 
 	/* copy data to user */
-	retval = to_cpy - copy_to_user(buf, &temp, to_cpy);
+	retval = to_cpy - copy_to_user(buf, &temp_read, to_cpy);
 
 	return retval;
 }
@@ -186,26 +203,23 @@ static ssize_t my_write(struct file* filp, const char __user* buf, size_t count,
 {
 	ssize_t retval = 0;
 	int to_cpy = 0;
-	static unsigned char temp[12];
+	static unsigned int temp_write = 0;
+
+	/* check if the write_pointer pointer is set */
+	if (write_pointer == NULL) {
+		printk("my_driver: trying to write to a device region not set yet\n");
+		return -ECANCELED;
+	}
 
 	/* get amount of bytes to copy from user */
-	to_cpy = (count <= sizeof(temp)) ? count : sizeof(temp);
+	to_cpy = (count <= sizeof(temp_write)) ? count : sizeof(temp_write);
 
 	/* copy data from user */
-	retval = to_cpy - copy_from_user(&temp, buf, to_cpy);
+	retval = to_cpy - copy_from_user(&temp_write, buf, to_cpy);
 
 	/* send to device */
-	switch(temp[0]) {
-	case 0:
-		iowrite32(*(unsigned int*)(temp+1), display_r);
-		break;
-	case 1:
-		iowrite32(*(unsigned int*)(temp+1), display_l);
-		break;
-	default:
-		printk("my_driver: error, no %x case in switch\n", temp[0]);
-		break;
-	}
+	iowrite32(temp_write, write_pointer);
+	printk("my_writer: wrote 0x%X to the %s\n", temp_write, perf_names[write_name_index]);
 
 	return retval;
 }
@@ -213,14 +227,24 @@ static ssize_t my_write(struct file* filp, const char __user* buf, size_t count,
 static long int my_ioctl(struct file*, unsigned int cmd, unsigned long arg)
 {
 	switch(cmd){
-	case 0:
-		peripheral = switches;
+	case RD_SWITCHES:
+		read_pointer = switches;
+		read_name_index = 0;
 		break;
-	case 1:
-		peripheral = p_buttons;
+	case RD_PBUTTONS:
+		read_pointer = p_buttons;
+		read_name_index = 1;
+		break;
+	case WR_L_DISPLAY:
+		write_pointer = display_l;
+		write_name_index = 2 + 0;
+		break;
+	case WR_R_DISPLAY:
+		write_pointer = display_r;
+		write_name_index = 2 + 1;
 		break;
 	default:
-		printk("my_driver: unknown ioctl command: %x\n", cmd);
+		printk("my_driver: unknown ioctl command: 0x%X\n", cmd);
 	}
 	return 0;
 }
@@ -232,29 +256,32 @@ static int my_pci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 	unsigned long resource;
 
 	retval = pci_enable_device(dev);
-	printk("my_driver: PCI enable retval: %d\n", retval);
 
 	pci_read_config_byte(dev, PCI_REVISION_ID, &revision);
 	printk("my_driver: PCI revision: %d\n", revision);
 
 	pci_read_config_dword(dev, 0, &vendor);
-	printk("my_driver: PCI device found. Vendor: %x\n", vendor);
+	printk("my_driver: PCI device found. Vendor: 0x%X\n", vendor);
 
 	resource = pci_resource_start(dev, 0);
-	printk("my_driver: PCI device resources start at bar 0: %lx\n", resource);
+	printk("my_driver: PCI device resources start at bar 0: 0x%lx\n", resource);
 	
 	display_r = ioremap(resource + 0xC000, 0x20);
 	display_l = ioremap(resource + 0xC140, 0x20);
 	switches = ioremap(resource + 0xC040, 0x20);
 	p_buttons = ioremap(resource + 0xC080, 0x20);
-	peripheral = switches;
+
+	read_pointer = switches; // default read peripheral pointer
+	write_pointer = display_r; // default write peripheral pointer
 
 	return 0;
 }
 
 static void my_pci_remove(struct pci_dev *dev)
 {
-	peripheral = NULL;
+	read_pointer = NULL;
+	write_pointer = NULL;
+
 	iounmap(display_r);
 	iounmap(display_l);
 	iounmap(switches);
