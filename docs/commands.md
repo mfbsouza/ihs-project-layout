@@ -10,7 +10,7 @@ insert a compiled module/driver to the kernel
 
 remove a module/driver from the kernel
 
-	$ sudo insmod module_name
+	$ sudo rmmod module_name
 
 obs: usually the 'module name' is the same name as the .ko file inserted
 
