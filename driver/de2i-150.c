@@ -255,28 +255,38 @@ static long int my_ioctl(struct file*, unsigned int cmd, unsigned long arg)
 
 static int my_pci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 {
-	int vendor, retval;
-	u8 revision;
+	unsigned short vendor, device;
+	unsigned char rev;
+	unsigned int bar_value;
 	unsigned long resource;
 
-	retval = pci_enable_device(dev);
+	/* enable the device */
+	if (pci_enable_device(dev) < 0) {
+		printk("my_driver: Could not enable the PCI device!\n");
+		return -EBUSY;
+	}
+	printk("my_driver: PCI device enabled\n");
 
-	pci_read_config_byte(dev, PCI_REVISION_ID, &revision);
-	printk("my_driver: PCI revision: %d\n", revision);
+	/* read some info from the PCI configuration space */
+	pci_read_config_word(dev, PCI_VENDOR_ID, &vendor);
+	pci_read_config_word(dev, PCI_DEVICE_ID, &device);
+	pci_read_config_byte(dev, PCI_REVISION_ID, &rev);
+	printk("my_driver: PCI device - Vendor 0x%X Device 0x%X Rev 0x%X\n", vendor, device, rev);
 
-	pci_read_config_dword(dev, 0, &vendor);
-	printk("my_driver: PCI device found. Vendor: 0x%X\n", vendor);
-
+	/* read info about the PCI device BAR0 */
+	pci_read_config_dword(dev, 0x20, &bar_value);
+	printk("my_driver: PCI device - BAR0 = 0x%X\n", bar_value);
 	resource = pci_resource_start(dev, 0);
-	printk("my_driver: PCI device resources start at bar 0: 0x%lx\n", resource);
+	printk("my_driver: PCI device - BAR0 Starts at 0x%lx\n", resource);
 	
+	/* set the IO physical address space to kernel address space */
 	display_r = ioremap(resource + 0xC000, 0x20);
 	display_l = ioremap(resource + 0xC140, 0x20);
-	switches = ioremap(resource + 0xC040, 0x20);
+	switches  = ioremap(resource + 0xC040, 0x20);
 	p_buttons = ioremap(resource + 0xC080, 0x20);
 
-	read_pointer = switches; // default read peripheral pointer
-	write_pointer = display_r; // default write peripheral pointer
+	read_pointer  = switches;  // default read IO pointer
+	write_pointer = display_r; // default write IO pointer
 
 	return 0;
 }
@@ -286,9 +296,12 @@ static void my_pci_remove(struct pci_dev *dev)
 	read_pointer = NULL;
 	write_pointer = NULL;
 
+	/* remove the IO mapping done in probe func */
 	iounmap(display_r);
 	iounmap(display_l);
 	iounmap(switches);
 	iounmap(p_buttons);
+
+	/* disable the PCI device */
 	pci_disable_device(dev);
 }

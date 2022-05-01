@@ -9,27 +9,26 @@
 
 	.
 	├── app
-	│   ├── include
-	│   │   ├── display.h
-	│   │   └── ioctl_cmds.h
 	│   └── src
+	│       ├── display.h
+	│       ├── ioctl_cmds.h
 	│       └── main.cpp
 	├── docs
 	│   └── commands.md
 	├── driver
-	│   ├── char-lkm-exemple.c
-	│   ├── de2i-150-ioctl-exemple.c
+	│   ├── char-lkm.c
+	│   ├── de2i-150.c
 	│   ├── de2i-150-mockup.c
 	│   ├── ioctl_cmds.h
 	│   └── Makefile
 	├── exemples
-	│   ├── app-ioctl-exemple.c
-	│   └── syscalls-exemple.c
+	│   ├── app-char-lkm.c
+	│   └── app-de2i-150.c
 	├── LICENSE
 	├── Makefile
 	├── README.md
 	└── scripts
-	    ├── app-ioctl-exemple.py
-	    ├── ioctl_cmds.py
-	    └── syscalls-exemple.py
+	    ├── app-char-lkm.py
+	    ├── app-de2i-150.py
+	    └── ioctl_cmds.py
 
