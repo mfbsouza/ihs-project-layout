@@ -79,17 +79,18 @@ static dev_t my_device_nbr;
 static struct class* my_class;
 static struct cdev my_device;
 
-/* device data */
+/* device data - MMIO peripherals */
+static void __iomem* display_r = NULL;
+static void __iomem* display_l = NULL;
+static void __iomem* switches  = NULL;
+static void __iomem* p_buttons = NULL;
 
-static void* display_r = NULL;
-static void* display_l = NULL;
-static void* switches = NULL;
-static void* p_buttons = NULL;
+/* device data - MMIO pointers used in write, read, ioctl syscall */
+static void __iomem* read_pointer  = NULL;
+static void __iomem* write_pointer = NULL;
 
-static void* read_pointer = NULL;
-static void* write_pointer = NULL;
-
-static const char* perf_names[] = {
+/* peripherals names for debugging in dmesg */
+static const char* peripheral[] = {
 	"switches",
 	"p_buttons",
 	"display_l",
@@ -97,8 +98,17 @@ static const char* perf_names[] = {
 	"green_leds",
 	"red_leds"
 };
-static int write_name_index = 2 + 1;
-static int read_name_index = 0;
+
+enum perf_names_idx {
+	SWITCH_IDX = 0,
+	PBUTTONS_IDX,
+	DISPLAYL_IDX,
+	DISPLAYR_IDX,
+	GREENLED_IDX,
+	REDLED_IDX
+};
+static int wr_name_idx = DISPLAYR_IDX;
+static int rd_name_idx = SWITCH_IDX;
 
 /* functions implementation */
 
@@ -188,7 +198,7 @@ static ssize_t my_read(struct file* filp, char __user* buf, size_t count, loff_t
 
 	/* read from the device */
 	temp_read = ioread32(read_pointer);
-	printk("my_driver: red 0x%X from the %s\n", temp_read, perf_names[read_name_index]);
+	printk("my_driver: red 0x%X from the %s\n", temp_read, peripheral[rd_name_idx]);
 
 	/* get amount of bytes to copy to user */
 	to_cpy = (count <= sizeof(temp_read)) ? count : sizeof(temp_read);
@@ -219,7 +229,7 @@ static ssize_t my_write(struct file* filp, const char __user* buf, size_t count,
 
 	/* send to device */
 	iowrite32(temp_write, write_pointer);
-	printk("my_writer: wrote 0x%X to the %s\n", temp_write, perf_names[write_name_index]);
+	printk("my_writer: wrote 0x%X to the %s\n", temp_write, peripheral[wr_name_idx]);
 
 	return retval;
 }
@@ -229,23 +239,23 @@ static long int my_ioctl(struct file*, unsigned int cmd, unsigned long arg)
 	switch(cmd){
 	case RD_SWITCHES:
 		read_pointer = switches;
-		read_name_index = 0;
-		printk("my_driver: updated read pointer to %s\n", perf_names[read_name_index]);
+		rd_name_idx = SWITCH_IDX;
+		printk("my_driver: updated read pointer to %s\n", peripheral[rd_name_idx]);
 		break;
 	case RD_PBUTTONS:
 		read_pointer = p_buttons;
-		read_name_index = 1;
-		printk("my_driver: updated read pointer to %s\n", perf_names[read_name_index]);
+		rd_name_idx = PBUTTONS_IDX;
+		printk("my_driver: updated read pointer to %s\n", peripheral[rd_name_idx]);
 		break;
 	case WR_L_DISPLAY:
 		write_pointer = display_l;
-		write_name_index = 2 + 0;
-		printk("my_driver: updated write pointer to %s\n", perf_names[write_name_index]);
+		wr_name_idx = DISPLAYL_IDX;
+		printk("my_driver: updated write pointer to %s\n", peripheral[wr_name_idx]);
 		break;
 	case WR_R_DISPLAY:
 		write_pointer = display_r;
-		write_name_index = 2 + 1;
-		printk("my_driver: updated write pointer to %s\n", perf_names[write_name_index]);
+		wr_name_idx = DISPLAYR_IDX;
+		printk("my_driver: updated write pointer to %s\n", peripheral[wr_name_idx]);
 		break;
 	default:
 		printk("my_driver: unknown ioctl command: 0x%X\n", cmd);
