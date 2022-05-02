@@ -1,7 +1,7 @@
-obj-m += de2i-150-ioctl-exemple.o
+obj-m += de2i-150.o
 
 all:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
 
 clean:
-	rm -rf *.cmd *.symvers *.ko *.mod.* *.mod *.o *.order .*.cmd
+	@rm -rf *.cmd *.symvers *.ko *.mod.* *.mod *.o *.order .*.cmd
