@@ -42,8 +42,8 @@ static long int	my_ioctl  (struct file*, unsigned int, unsigned long);
 
 /* pci functions */
 
-static int  my_pci_probe  (struct pci_dev *dev, const struct pci_device_id *id);
-static void my_pci_remove (struct pci_dev *dev);
+static int  __init my_pci_probe  (struct pci_dev *dev, const struct pci_device_id *id);
+static void __exit my_pci_remove (struct pci_dev *dev);
 
 /* pci ids which this driver supports */
 
@@ -67,7 +67,7 @@ static struct file_operations fops = {
 /* pci driver operations */
 
 static struct pci_driver pci_ops = {
-	.name = "alterahello",
+	.name = DRIVER_NAME,
 	.id_table = pci_ids,
 	.probe = my_pci_probe,
 	.remove = my_pci_remove
@@ -79,13 +79,10 @@ static dev_t my_device_nbr;
 static struct class* my_class;
 static struct cdev my_device;
 
-/* device data - MMIO peripherals */
-static void __iomem* display_r = NULL;
-static void __iomem* display_l = NULL;
-static void __iomem* switches  = NULL;
-static void __iomem* p_buttons = NULL;
+/* device data - PCI BARs mapped to virtual space */
+static void __iomem* bar0_mmio = NULL;
 
-/* device data - MMIO pointers used in write, read, ioctl syscall */
+/* device data - MMIO pointers used in write() read() ioctl() */
 static void __iomem* read_pointer  = NULL;
 static void __iomem* write_pointer = NULL;
 
@@ -238,22 +235,22 @@ static long int my_ioctl(struct file*, unsigned int cmd, unsigned long arg)
 {
 	switch(cmd){
 	case RD_SWITCHES:
-		read_pointer = switches;
+		read_pointer = bar0_mmio + 0xC080;
 		rd_name_idx = SWITCH_IDX;
 		printk("my_driver: updated read pointer to %s\n", peripheral[rd_name_idx]);
 		break;
 	case RD_PBUTTONS:
-		read_pointer = p_buttons;
+		read_pointer = bar0_mmio + 0xC0A0;
 		rd_name_idx = PBUTTONS_IDX;
 		printk("my_driver: updated read pointer to %s\n", peripheral[rd_name_idx]);
 		break;
 	case WR_L_DISPLAY:
-		write_pointer = display_l;
+		write_pointer = bar0_mmio + 0xC020;
 		wr_name_idx = DISPLAYL_IDX;
 		printk("my_driver: updated write pointer to %s\n", peripheral[wr_name_idx]);
 		break;
 	case WR_R_DISPLAY:
-		write_pointer = display_r;
+		write_pointer = bar0_mmio + 0xC000;
 		wr_name_idx = DISPLAYR_IDX;
 		printk("my_driver: updated write pointer to %s\n", peripheral[wr_name_idx]);
 		break;
@@ -263,12 +260,12 @@ static long int my_ioctl(struct file*, unsigned int cmd, unsigned long arg)
 	return 0;
 }
 
-static int my_pci_probe(struct pci_dev *dev, const struct pci_device_id *id)
+static int __init my_pci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 {
 	unsigned short vendor, device;
 	unsigned char rev;
 	unsigned int bar_value;
-	unsigned long resource;
+	unsigned long bar_len;
 
 	/* enable the device */
 	if (pci_enable_device(dev) < 0) {
@@ -284,34 +281,40 @@ static int my_pci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 	printk("my_driver: PCI device - Vendor 0x%X Device 0x%X Rev 0x%X\n", vendor, device, rev);
 
 	/* read info about the PCI device BAR0 */
-	pci_read_config_dword(dev, 0x20, &bar_value);
-	printk("my_driver: PCI device - BAR0 = 0x%X\n", bar_value);
-	resource = pci_resource_start(dev, 0);
-	printk("my_driver: PCI device - BAR0 Starts at 0x%lx\n", resource);
-	
-	/* set the IO physical address space to kernel address space */
-	display_r = ioremap(resource + 0xC000, 0x20);
-	display_l = ioremap(resource + 0xC140, 0x20);
-	switches  = ioremap(resource + 0xC040, 0x20);
-	p_buttons = ioremap(resource + 0xC080, 0x20);
+	pci_read_config_dword(dev, 0x10, &bar_value);
+	bar_len = pci_resource_len(dev, 0);
+	printk("my_driver: PCI device - BAR0 => 0x%X with length of %ld Kbytes\n", bar_value, bar_len/1024);
 
-	read_pointer  = switches;  // default read IO pointer
-	write_pointer = display_r; // default write IO pointer
+	/* mark the PCI BAR0 region as reserved to this driver */
+	if (pci_request_region(dev, 0, DRIVER_NAME) != 0) {
+		printk("my_driver: PCI Error - PCI BAR0 region already in use!\n");
+		pci_disable_device(dev);
+		return -EBUSY;
+	}
+
+	/* map the BAR0 Physical address space to virtual space */
+	bar0_mmio = pci_iomap(dev, 0, bar_len);
+
+	/* initialize a default peripheral read and write pointer */
+	write_pointer = bar0_mmio + 0xC000;
+	read_pointer  = bar0_mmio + 0xC080;
 
 	return 0;
 }
 
-static void my_pci_remove(struct pci_dev *dev)
+static void __exit my_pci_remove(struct pci_dev *dev)
 {
 	read_pointer = NULL;
 	write_pointer = NULL;
 
 	/* remove the IO mapping done in probe func */
-	iounmap(display_r);
-	iounmap(display_l);
-	iounmap(switches);
-	iounmap(p_buttons);
+	pci_iounmap(dev, bar0_mmio);
 
 	/* disable the PCI device */
 	pci_disable_device(dev);
+
+	/* unmark device PCI BAR0 as reserved */
+	pci_release_region(dev, 0);
+
+	printk("my_driver: PCI Device - Disabled and BAR0 Released");
 }
