@@ -97,15 +97,15 @@ static const char* peripheral[] = {
 };
 
 enum perf_names_idx {
-	SWITCH_IDX = 0,
-	PBUTTONS_IDX,
-	DISPLAYL_IDX,
-	DISPLAYR_IDX,
-	GREENLED_IDX,
-	REDLED_IDX
+	IDX_SWITCH = 0,
+	IDX_PBUTTONS,
+	IDX_DISPLAYL,
+	IDX_DISPLAYR,
+	IDX_GREENLED,
+	IDX_REDLED
 };
-static int wr_name_idx = DISPLAYR_IDX;
-static int rd_name_idx = SWITCH_IDX;
+static int wr_name_idx = IDX_DISPLAYR;
+static int rd_name_idx = IDX_SWITCH;
 
 /* functions implementation */
 
@@ -235,24 +235,28 @@ static long int my_ioctl(struct file*, unsigned int cmd, unsigned long arg)
 {
 	switch(cmd){
 	case RD_SWITCHES:
-		read_pointer = bar0_mmio + 0xC080;
-		rd_name_idx = SWITCH_IDX;
-		printk("my_driver: updated read pointer to %s\n", peripheral[rd_name_idx]);
+		read_pointer = bar0_mmio + 0xC080; //TODO: update offset
+		rd_name_idx = IDX_SWITCH;
 		break;
 	case RD_PBUTTONS:
-		read_pointer = bar0_mmio + 0xC0A0;
-		rd_name_idx = PBUTTONS_IDX;
-		printk("my_driver: updated read pointer to %s\n", peripheral[rd_name_idx]);
+		read_pointer = bar0_mmio + 0xC0A0; //TODO: update offset
+		rd_name_idx = IDX_PBUTTONS;
 		break;
 	case WR_L_DISPLAY:
-		write_pointer = bar0_mmio + 0xC020;
-		wr_name_idx = DISPLAYL_IDX;
-		printk("my_driver: updated write pointer to %s\n", peripheral[wr_name_idx]);
+		write_pointer = bar0_mmio + 0xC020; //TODO: update offset
+		wr_name_idx = IDX_DISPLAYL;
 		break;
 	case WR_R_DISPLAY:
-		write_pointer = bar0_mmio + 0xC000;
-		wr_name_idx = DISPLAYR_IDX;
-		printk("my_driver: updated write pointer to %s\n", peripheral[wr_name_idx]);
+		write_pointer = bar0_mmio + 0xC000; //TODO: update offset
+		wr_name_idx = IDX_DISPLAYR;
+		break;
+	case WR_RED_LEDS:
+		write_pointer = bar0_mmio + 0xC040; //TODO: update offset
+		wr_name_idx = IDX_DISPLAYR;
+		break;
+	case WR_GREEN_LEDS:
+		write_pointer = bar0_mmio + 0xC060; //TODO: update offset
+		wr_name_idx = IDX_DISPLAYR;
 		break;
 	default:
 		printk("my_driver: unknown ioctl command: 0x%X\n", cmd);
@@ -296,8 +300,8 @@ static int __init my_pci_probe(struct pci_dev *dev, const struct pci_device_id *
 	bar0_mmio = pci_iomap(dev, 0, bar_len);
 
 	/* initialize a default peripheral read and write pointer */
-	write_pointer = bar0_mmio + 0xC000;
-	read_pointer  = bar0_mmio + 0xC080;
+	write_pointer = bar0_mmio + 0xC000; //TODO: update offset
+	read_pointer  = bar0_mmio + 0xC080; //TODO: update offset
 
 	return 0;
 }
