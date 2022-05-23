@@ -8,27 +8,28 @@
 ## Current project tree
 
 	.
-	├── app
-	│   └── src
-	│       ├── display.h
-	│       ├── ioctl_cmds.h
-	│       └── main.cpp
 	├── docs
 	│   └── commands.md
 	├── driver
-	│   ├── char-lkm.c
-	│   ├── de2i-150.c
-	│   ├── de2i-150-mockup.c
-	│   ├── ioctl_cmds.h
-	│   └── Makefile
+	│   ├── char
+	│   │   ├── dummy.c
+	│   │   └── Makefile
+	│   └── pci
+	│       ├── de2i-150.c
+	│       ├── ioctl_cmds.h
+	│       └── Makefile
 	├── exemples
-	│   ├── app-char-lkm.c
-	│   └── app-de2i-150.c
+	│   ├── c
+	│   │   ├── app-char.c
+	│   │   └── app-pci.c
+	│   └── python
+	│       ├── app-char.py
+	│       └── app-pci.py
 	├── LICENSE
 	├── Makefile
 	├── README.md
-	└── scripts
-	    ├── app-char-lkm.py
-	    ├── app-de2i-150.py
-	    └── ioctl_cmds.py
+	├── setup.sh
+	└── src
+	    ├── display.h
+	    └── main.cpp
 

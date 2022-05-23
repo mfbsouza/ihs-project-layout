@@ -4,10 +4,10 @@
 PROJECT  := app
 
 # paths
-BUILDDIR := ./app/build
+BUILDDIR := ./build
 DBGDIR   := $(BUILDDIR)/debug
 RELDIR   := $(BUILDDIR)/release
-INCDIR   := ./app/src
+INCDIR   := ./src
 
 # compiler
 PREFIX :=
@@ -36,9 +36,9 @@ else
 endif
 
 # sources to compile
-ALLCSRCS += $(shell find ./app/src -type f -name *.c)
-ALLCXXSRCS += $(shell find ./app/src -type f -name *.cpp)
-ALLASMSRCS += $(shell find ./app/src -type f -name *.asm)
+ALLCSRCS += $(shell find ./src -type f -name *.c)
+ALLCXXSRCS += $(shell find ./src -type f -name *.cpp)
+ALLASMSRCS += $(shell find ./src -type f -name *.asm)
 
 # objects settings
 COBJS   := $(addprefix $(OBJDIR)/, $(notdir $(ALLCSRCS:.c=.o)))
