@@ -8,6 +8,9 @@
 ## Current project tree
 
 	.
+	├── src
+	│   ├── display.h
+	│   └── main.cpp
 	├── docs
 	│   └── commands.md
 	├── driver
@@ -28,8 +31,5 @@
 	├── LICENSE
 	├── Makefile
 	├── README.md
-	├── setup.sh
-	└── src
-	    ├── display.h
-	    └── main.cpp
+	└── setup.sh
 

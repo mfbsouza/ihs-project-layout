@@ -12,11 +12,11 @@
 
 /* driver constants */
 
-#define DRIVER_NAME 	"my_driver"
-#define FILE_NAME 	"mydev"
-#define DRIVER_CLASS 	"MyModuleClass"
-#define MY_PCI_VENDOR_ID 0x1172
-#define MY_PCI_DEVICE_ID 0x0004
+#define DRIVER_NAME      "my_driver"
+#define FILE_NAME        "mydev"
+#define DRIVER_CLASS     "MyModuleClass"
+#define MY_PCI_VENDOR_ID  0x1172
+#define MY_PCI_DEVICE_ID  0x0004
 
 /* meta information */
 
@@ -79,10 +79,11 @@ static dev_t my_device_nbr;
 static struct class* my_class;
 static struct cdev my_device;
 
-/* device data - PCI BARs mapped to virtual space */
+/* --- device data --- */
+/* PCI BARs mapped to virtual space */
 static void __iomem* bar0_mmio = NULL;
 
-/* device data - MMIO pointers used in write() read() ioctl() */
+/* MMIO pointers used in write() read() ioctl() */
 static void __iomem* read_pointer  = NULL;
 static void __iomem* write_pointer = NULL;
 
