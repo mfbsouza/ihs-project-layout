@@ -8,7 +8,13 @@
 #include <linux/uaccess.h>	/* copy_*_user functions */
 #include <linux/pci.h>		/* pci funcs and types */
 
-#include "ioctl_cmds.h"
+#include "../../include/ioctl_cmds.h"
+
+/* meta information */
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("mfbsouza");
+MODULE_DESCRIPTION("simple pci driver for DE2i-150 dev board");
 
 /* driver constants */
 
@@ -18,19 +24,10 @@
 #define MY_PCI_VENDOR_ID  0x1172
 #define MY_PCI_DEVICE_ID  0x0004
 
-/* meta information */
-
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("mfbsouza");
-MODULE_DESCRIPTION("simple pci driver for DE2i-150 dev board");
-
-/* lkm entry and exit points */
+/* lkm entry and exit functions */
 
 static int  __init my_init (void);
 static void __exit my_exit (void);
-
-module_init(my_init);
-module_exit(my_exit);
 
 /* char device system calls */
 
@@ -323,3 +320,6 @@ static void __exit my_pci_remove(struct pci_dev *dev)
 
 	printk("my_driver: PCI Device - Disabled and BAR0 Released");
 }
+
+module_init(my_init);
+module_exit(my_exit);

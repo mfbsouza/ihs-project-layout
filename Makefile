@@ -7,7 +7,7 @@ PROJECT  := app
 BUILDDIR := ./build
 DBGDIR   := $(BUILDDIR)/debug
 RELDIR   := $(BUILDDIR)/release
-INCDIR   := ./src
+INCDIR   := ./include
 
 # compiler
 PREFIX :=
@@ -71,7 +71,7 @@ $(COBJS) : $(OBJDIR)/%.o : %.c
 ifeq ($(VERBOSE),1)
 	$(CC) -c $(CFLAGS) $< -o $@
 else
-	@echo -e "[CC]\t$<"
+	@echo -e "[CC] \t$<"
 	@$(CC) -c $(CFLAGS) $< -o $@
 endif
 
@@ -89,7 +89,7 @@ $(ASMOBJS) : $(OBJDIR)/%.o : %.asm
 ifeq ($(VERBOSE),1)
 	$(AS) $(ASMFLAGS) $< -o $@
 else
-	@echo -e "[AS]\t$<"
+	@echo -e "[AS] \t$<"
 	@$(AS) $(ASMFLAGS) $< -o $@
 endif
 
@@ -98,7 +98,7 @@ $(BINDIR)/$(PROJECT): $(OBJS)
 ifeq ($(VERBOSE),1)
 	$(LD) $(LDFLAGS) $(OBJS) -o $@
 else
-	@echo -e "[LD]\t./$@"
+	@echo -e "[LD] \t./$@"
 	@$(LD) $(LDFLAGS) $(OBJS) -o $@
 endif
 
@@ -107,7 +107,7 @@ $(BUILDDIR)/$(PROJECT).lst: $(BINDIR)/$(PROJECT)
 ifeq ($(VERBOSE),1)
 	$(OD) -h -S $< > $@
 else
-	@echo -e "[OD]\t./$@"
+	@echo -e "[OD] \t./$@"
 	@$(OD) -h -S $< > $@
 endif
 

@@ -9,17 +9,16 @@
 
 	.
 	├── src
-	│   ├── display.h
 	│   └── main.cpp
-	├── docs
-	│   └── commands.md
+	├── include
+	│   ├── display.h
+	│   └── ioctl_cmds.h
 	├── driver
 	│   ├── char
 	│   │   ├── dummy.c
 	│   │   └── Makefile
 	│   └── pci
 	│       ├── de2i-150.c
-	│       ├── ioctl_cmds.h
 	│       └── Makefile
 	├── exemples
 	│   ├── c
@@ -28,8 +27,9 @@
 	│   └── python
 	│       ├── app-char.py
 	│       └── app-pci.py
+	├── docs
+	│   └── commands.md
 	├── LICENSE
 	├── Makefile
 	├── README.md
 	└── setup.sh
-
