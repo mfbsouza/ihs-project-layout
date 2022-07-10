@@ -9,12 +9,11 @@ DBGDIR   := $(BUILDDIR)/debug
 RELDIR   := $(BUILDDIR)/release
 INCDIR   := ./include
 
-# compiler
+# compiler and binutils
 PREFIX :=
 CC     := $(PREFIX)gcc
 AS     := $(PREFIX)nasm
 CXX    := $(PREFIX)g++
-LD     := $(PREFIX)g++
 OD     := $(PREFIX)objdump
 
 # flags
@@ -36,9 +35,16 @@ else
 endif
 
 # sources to compile
-ALLCSRCS += $(shell find ./src -type f -name *.c)
+ALLCSRCS   += $(shell find ./src -type f -name *.c)
 ALLCXXSRCS += $(shell find ./src -type f -name *.cpp)
 ALLASMSRCS += $(shell find ./src -type f -name *.asm)
+
+# set the linker to g++ if there is any c++ source code
+ifeq ($(ALLCXXSRCS),)
+        LD := $(PREFIX)gcc
+else
+        LD := $(PREFIX)g++
+endif
 
 # objects settings
 COBJS   := $(addprefix $(OBJDIR)/, $(notdir $(ALLCSRCS:.c=.o)))
