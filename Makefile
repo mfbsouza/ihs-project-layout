@@ -4,7 +4,7 @@
 PROJECT  := app
 
 # paths
-BUILDDIR := ./build
+BUILDDIR := ./target
 DBGDIR   := $(BUILDDIR)/debug
 RELDIR   := $(BUILDDIR)/release
 INCDIR   := ./include
@@ -30,8 +30,8 @@ ifeq ($(DEBUG),1)
 else
 	BINDIR    := $(RELDIR)
 	OBJDIR    := $(RELDIR)/obj
-	CFLAGS    += -g -O3
-	CXXFLAGS  += -g -O3
+	CFLAGS    += -g -O3 -DNDEBUG
+	CXXFLAGS  += -g -O3 -DNDEBUG
 endif
 
 # sources to compile
