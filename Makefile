@@ -4,17 +4,16 @@
 PROJECT  := app
 
 # paths
-BUILDDIR := ./app/build
+BUILDDIR := ./target
 DBGDIR   := $(BUILDDIR)/debug
 RELDIR   := $(BUILDDIR)/release
-INCDIR   := ./app/include
+INCDIR   := ./include
 
-# compiler
+# compiler and binutils
 PREFIX :=
 CC     := $(PREFIX)gcc
 AS     := $(PREFIX)nasm
 CXX    := $(PREFIX)g++
-LD     := $(PREFIX)g++
 OD     := $(PREFIX)objdump
 
 # flags
@@ -31,14 +30,21 @@ ifeq ($(DEBUG),1)
 else
 	BINDIR    := $(RELDIR)
 	OBJDIR    := $(RELDIR)/obj
-	CFLAGS    += -g -O3
-	CXXFLAGS  += -g -O3
+	CFLAGS    += -g -O3 -DNDEBUG
+	CXXFLAGS  += -g -O3 -DNDEBUG
 endif
 
 # sources to compile
-ALLCSRCS += $(shell find ./app/src ./app/include -type f -name *.c)
-ALLCXXSRCS += $(shell find ./app/src ./app/include -type f -name *.cpp)
-ALLASMSRCS += $(shell find ./app/src ./app/include -type f -name *.asm)
+ALLCSRCS   += $(shell find ./src -type f -name *.c)
+ALLCXXSRCS += $(shell find ./src -type f -name *.cpp)
+ALLASMSRCS += $(shell find ./src -type f -name *.asm)
+
+# set the linker to g++ if there is any c++ source code
+ifeq ($(ALLCXXSRCS),)
+        LD := $(PREFIX)gcc
+else
+        LD := $(PREFIX)g++
+endif
 
 # objects settings
 COBJS   := $(addprefix $(OBJDIR)/, $(notdir $(ALLCSRCS:.c=.o)))
@@ -71,7 +77,7 @@ $(COBJS) : $(OBJDIR)/%.o : %.c
 ifeq ($(VERBOSE),1)
 	$(CC) -c $(CFLAGS) $< -o $@
 else
-	@echo -e "[CC]\t$<"
+	@echo -n "[CC] \t$<\n"
 	@$(CC) -c $(CFLAGS) $< -o $@
 endif
 
@@ -80,7 +86,7 @@ $(CXXOBJS) : $(OBJDIR)/%.o : %.cpp
 ifeq ($(VERBOSE),1)
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 else
-	@echo -e "[CXX]\t$<"
+	@echo -n "[CXX]\t$<\n"
 	@$(CXX) -c $(CXXFLAGS) $< -o $@
 endif
 
@@ -89,7 +95,7 @@ $(ASMOBJS) : $(OBJDIR)/%.o : %.asm
 ifeq ($(VERBOSE),1)
 	$(AS) $(ASMFLAGS) $< -o $@
 else
-	@echo -e "[AS]\t$<"
+	@echo -n "[AS] \t$<\n"
 	@$(AS) $(ASMFLAGS) $< -o $@
 endif
 
@@ -98,7 +104,7 @@ $(BINDIR)/$(PROJECT): $(OBJS)
 ifeq ($(VERBOSE),1)
 	$(LD) $(LDFLAGS) $(OBJS) -o $@
 else
-	@echo -e "[LD]\t./$@"
+	@echo -n "[LD] \t./$@\n"
 	@$(LD) $(LDFLAGS) $(OBJS) -o $@
 endif
 
@@ -107,7 +113,7 @@ $(BUILDDIR)/$(PROJECT).lst: $(BINDIR)/$(PROJECT)
 ifeq ($(VERBOSE),1)
 	$(OD) -h -S $< > $@
 else
-	@echo -e "[OD]\t./$@"
+	@echo -n "[OD] \t./$@\n"
 	@$(OD) -h -S $< > $@
 endif
 

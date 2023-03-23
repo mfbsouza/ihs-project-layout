@@ -8,6 +8,7 @@
 #include <sys/ioctl.h>	/* ioctl() */
 #include <errno.h>	/* error codes */
 
+// ioctl commands defined for the pci driver header
 #include "ioctl_cmds.h"
 
 int main(int argc, char** argv)

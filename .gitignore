@@ -1,7 +1,8 @@
-app/build
+build
 compile_commands.json
 .cache/
 *.swp
+__pycache__/
 
 *.cmd
 *.symvers
